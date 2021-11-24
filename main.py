@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def hist(fonte, nome):
     ocorr = {}
     for j in fonte:
@@ -25,13 +26,13 @@ def prob(ocorr):
 # Função que passada uma tabela de probabilidades devolve a entropia
 def entropia(p):
     p = p[p != 0]
-    return -sum(p*np.log2(p))
+    return -sum(p * np.log2(p))
 
 
 file_names = ["bible.txt", "finance.csv", "jquery-3.6.0.js", "random.txt"]
 for i in file_names:
     file = ""
-    with open("dataset\\"+i, "r") as f:
+    with open("dataset\\" + i, "r") as f:
         file = f.read()
 
     ocorr = hist(file, i)
