@@ -36,4 +36,4 @@ for i in file_names:
         file = f.read()
 
     ocorr = hist(file, i)
-    print("Entropia:", entropia(prob(np.array(list(ocorr.values())))))
+    print("Entropia: {0:.4} bits/ símbolo".format(entropia(prob(np.array(list(ocorr.values()))))))
