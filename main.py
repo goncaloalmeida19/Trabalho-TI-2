@@ -28,7 +28,7 @@ def entropia(p):
     return -sum(p*np.log2(p))
 
 
-file_names = ["bible.txt", "finance.csv", "jquery-3.6.0.js","random.txt"]
+file_names = ["bible.txt", "finance.csv", "jquery-3.6.0.js", "random.txt"]
 for i in file_names:
     file = ""
     with open("dataset\\"+i, "r") as f:
