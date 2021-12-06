@@ -8,6 +8,6 @@ with open("..\dataset\\bible.txt", 'rb') as file:
     decompressed_data = bz2.decompress(compressed_data)
     str_decompressed_data = decompressed_data.decode()
     print(str_decompressed_data)
-    with open("..\compressed_dataset\\bible2.txt", "w") as write_file:
+    with open("..\dataset\\bible.txt", "w") as write_file:
         write_file.write(str_decompressed_data)
     print(str_decompressed_data == data)  # True
