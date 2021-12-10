@@ -6,7 +6,7 @@ import ppmd
 
 from HuffmanCodec import HuffmanCodec as huffman
 import LZW as lzw
-from Semana4e5 import PPM
+from Semana4e5 import PPM, Deflate
 
 
 def huffman_coding(data):
@@ -35,17 +35,22 @@ def lzma_encoding(data):
 
 
 def lzw_encoding(data):
-    compressed_data = lzw.compress(data.encode)
-    print(list(compressed_data))
+    compressed_data = lzw.compress(data)
     decompressed_data = lzw.decompress(compressed_data)
-    #str_decompressed_data = decompressed_data.join()
-    #print(str_decompressed_data == data)  # True
+    print(decompressed_data == data)  # True
     return compressed_data, decompressed_data
 
+
 def ppmd_encoding(data, name_data):
-    compressed_file = PPM.ppmd_encoding(data, name_data)
-    PPM.ppmd_decoding(name_data + ".ppmd")
-    return compressed_file
+    print("sfd")
+
+
+def deflate_encoding(data):
+    compressed_data = Deflate.deflate(data.encode())
+    decompressed_data = Deflate.inflate(compressed_data)
+    str_decompressed_data = decompressed_data.decode()
+    print(str_decompressed_data == data)  # True
+    return compressed_data, decompressed_data
 
 
 data_type = [".txt", ".csv", ".js", ".txt"]
@@ -61,8 +66,13 @@ for i in range(len(filenames)):
             write_file.write(compressed_data_lzma)
         compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
         with open("..\compressed_dataset\\" + filenames[i] + ".lzw", "w") as write_file:
-            write_file.write(str(compressed_data_lzw))
+            listToStr = ' '.join([str(elem) for elem in compressed_data_lzw])
+            write_file.write(listToStr)
         # compressed_data_hf, decompressed_data_hf = huffman_coding(data)
         # with open("..\compressed_dataset\\" + filenames[i] + ".hf", "wb") as write_file:
         #     write_file.write(compressed_data_hf)
-        #compressed_file_ppmd = ppmd_encoding(data, filenames[i])
+        compressed_data = PPM.PpmdCompressor.compress(file)
+        decompressed_file = PPM.PpmdDecompressor.decompress(filenames[i] + ".ppmd")
+        compressed_data_deflate, decompressed_data_deflate = deflate_encoding(data)
+        with open("..\compressed_dataset\\" + filenames[i] + ".deflate", "wb") as write_file:
+            write_file.write(compressed_data_deflate)
