@@ -9,10 +9,14 @@ from Semana4e5 import Deflate
 
 
 def huffman_encoding(data):
-    compressed_data = HuffmanCodec.encode(data)
+    encoded_text = HuffmanCodec.encode(data)
+    b_arr = bytearray()
+    for i in range(0, len(encoded_text), 8):
+        b_arr.append(int(encoded_text[i:i + 8], 2))
+    compressed_data = b_arr
     decompressed_data = HuffmanCodec.decode(compressed_data)
     print(decompressed_data == data, "Huffman")  # True
-    return compressed_data, decompressed_data
+    return b_arr, decompressed_data
 
 
 def bzip(data):
