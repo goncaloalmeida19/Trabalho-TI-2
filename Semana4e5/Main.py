@@ -73,11 +73,11 @@ for i in range(len(filenames)):
              write_file.write(compressed_data_lzma)
         # compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
         #compressed_data_lzw = lzw_encoding(data)
-        j += 1
+        #j += 1
         #with open(write_path + compression_type[j], "wb") as write_file:
         #    write_file.write(compressed_data_lzw.encode())
-        compressed_data_huffman, decompressed_data_huffman = huffman_encoding()
-        #j += 1
+        compressed_data_huffman, decompressed_data_huffman = huffman_encoding(data)
+        j += 1
         with open(write_path + compression_type[j], "w") as write_file:
             write_file.write(compressed_data_huffman)
         compressed_data_ppmd, decompressed_data_ppmd = ppmd_encoding(data)
