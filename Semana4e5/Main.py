@@ -9,10 +9,10 @@ from Semana4e5 import Deflate
 
 
 def huffman_encoding(data):
-    encoded_text = HuffmanCodec.encode(data).encode()
-    decompressed_data = HuffmanCodec.decode(encoded_text)
+    compressed_data = HuffmanCodec.encode(data)
+    decompressed_data = HuffmanCodec.decode(compressed_data)
     print(decompressed_data == data, "Huffman")  # True
-    return encoded_text, decompressed_data
+    return compressed_data, decompressed_data
 
 
 def bzip(data):
@@ -58,7 +58,7 @@ def deflate_encoding(data):
 
 data_type = [".txt", ".csv", ".js", ".txt"]
 filenames = ["bible", "finance", "jquery-3.6.0", "random"]
-compression_type = [".bzip2", ".lzma", ".lzw", ".huffman", ".ppm", ".deflate"]
+compression_type = [".bzip2", ".lzma", ".lzw", ".huffman", ".ppmd", ".deflate"]
 for i in range(len(filenames)):
     j = 0
     with open("..\dataset\\" + filenames[i] + data_type[i], "r") as file:

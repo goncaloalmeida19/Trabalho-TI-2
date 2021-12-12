@@ -1,13 +1,5 @@
-# https://github.com/shkolovy/huffman-compressor/blob/master/huffman_compressor.py
-
-"""
-Implementation of archivator using Huffman coding
-works only with alphanumeric symbols, ASCII 0-255
-"""
-
 from collections import Counter
 from queue import PriorityQueue
-import os
 
 
 class HuffmanNode:
@@ -53,10 +45,6 @@ def encode(text):
     if num != 0:
         encoded_text_code = num * "0" + encoded_text_code
 
-    print(f"frequencies: {frequencies}")
-    print(f"encoded huffman tree code: {encoded_tree_code}")
-    print(f"encoded text code: {encoded_text_code}")
-
     return f"{encoded_tree_code}{num:08b}{encoded_text_code}"
 
 
@@ -85,33 +73,15 @@ def decode(encoded_text):
     return text
 
 
-def decompress(input_path, output_path):
-    """Save decoded text to output file"""
-
-    with open(input_path, "rb") as in_file, open(output_path, "w") as out_file:
-        encoded_text = ""
-
-        byte = in_file.read(1)
-        while len(byte) > 0:
-            encoded_text += f"{bin(ord(byte))[2:]:0>8}"
-            byte = in_file.read(1)
-
-        decoded_text = decode(encoded_text)
-        out_file.write(decoded_text)
-
-
-def compress(input_path, output_path):
+def compress(data):
     """Save encoded text to output file"""
+    encoded_text = encode(data)
 
-    with open(input_path) as in_file, open(output_path, "wb") as out_file:
-        text = in_file.read()
-        encoded_text = encode(text)
+    b_arr = bytearray()
+    for i in range(0, len(encoded_text), 8):
+        b_arr.append(int(encoded_text[i:i+8], 2))
 
-        b_arr = bytearray()
-        for i in range(0, len(encoded_text), 8):
-            b_arr.append(int(encoded_text[i:i+8], 2))
-
-        out_file.write(b_arr)
+    return b_arr
 
 
 def _fill_code_table(node, code, code_table):
@@ -155,18 +125,3 @@ def _decode_huffman_tree(tree_code_ar):
         return HuffmanNode(chr(int(char, 2)))
 
     return HuffmanNode(None, left=_decode_huffman_tree(tree_code_ar), right=_decode_huffman_tree(tree_code_ar))
-
-
-def _print_ratio(input_path, output_path):
-    before_size = os.path.getsize(input_path)
-    after_size = os.path.getsize(output_path)
-    compression_percent = round(100 - after_size / before_size * 100, 1)
-    print(f"before: {before_size}bytes, after: {after_size}bytes, "
-          f"compression {compression_percent}%")
-
-
-if __name__ == "__main__":
-    file_to_compress, decompressed, compressed = "compress-me", "decompressed", "compressed"
-    compress(file_to_compress, compressed)
-    _print_ratio(file_to_compress, compressed)
-    decompress(compressed, decompressed)
