@@ -1,19 +1,18 @@
 # ppm https://github.com/nayuki/Reference-arithmetic-coding/tree/master/python
-
 import bz2
 import lzma
 import pyppmd
 
-from HuffmanCodec import HuffmanCodec as huffman
+from HuffmanCodec import Huffman_Encoding, Output_Decoded
 import LZW as lzw
-from Semana4e5 import PPM, Deflate
+from Semana4e5 import Deflate
 
 
-def huffman_coding(data):
-    codec = huffman.from_data(data)
-    # Code table is dictionary mapping symbol to (bitsize, value)
-    code_table = huffman.get_code_table(codec)
-    # print(code_table)
+def huffman_encoding(data):
+    compressed_data, nodes = Huffman_Encoding(data)
+    str_decompressed_data = Output_Decoded(compressed_data, nodes[0])
+    print(str_decompressed_data == data)  # True
+    return compressed_data, str_decompressed_data
 
 
 def bzip(data):
@@ -44,7 +43,7 @@ def lzw_encoding(data):
 def ppmd_encoding(data):
     compressed_data = pyppmd.compress(data.encode())
     decompressed_data = pyppmd.decompress(compressed_data).decode()
-    print("ppmd", decompressed_data == data)  # True
+    print(decompressed_data == data)  # True
     return compressed_data, decompressed_data
 
 
@@ -71,9 +70,9 @@ for i in range(len(filenames)):
         with open("..\compressed_dataset\\" + filenames[i] + ".lzw", "w") as write_file:
             listToStr = ' '.join([str(elem) for elem in compressed_data_lzw])
             write_file.write(listToStr)
-        # compressed_data_hf, decompressed_data_hf = huffman_coding(data)
-        # with open("..\compressed_dataset\\" + filenames[i] + ".hf", "wb") as write_file:
-        #     write_file.write(compressed_data_hf)
+        compressed_data_huffman, decompressed_data_huffman = huffman_encoding(data)
+        with open("..\compressed_dataset\\" + filenames[i] + ".huffman", "w") as write_file:
+            write_file.write(compressed_data_huffman)
         compressed_data_ppmd, decompressed_data_ppmd = ppmd_encoding(data)
         with open("..\compressed_dataset\\" + filenames[i] + ".ppmd", "wb") as write_file:
             write_file.write(compressed_data_ppmd)
