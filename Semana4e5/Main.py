@@ -3,14 +3,14 @@ import bz2
 import lzma
 import pyppmd
 
-from HuffmanCodec import Huffman_Encoding, Output_Decoded
+from HuffmanCodec import PrefixCodec
 import LZW as lzw
 from Semana4e5 import Deflate
 
 
 def huffman_encoding(data):
-    compressed_data, nodes = Huffman_Encoding(data)
-    str_decompressed_data = Output_Decoded(compressed_data, nodes[0])
+    compressed_data = PrefixCodec.encode(PrefixCodec, data)
+    str_decompressed_data = PrefixCodec.decode(PrefixCodec, data=compressed_data)
     print(str_decompressed_data == data)  # True
     return compressed_data, str_decompressed_data
 
@@ -35,9 +35,10 @@ def lzma_encoding(data):
 
 def lzw_encoding(data):
     compressed_data = lzw.compress(data)
-    decompressed_data = lzw.decompress(compressed_data)
-    print(decompressed_data == data)  # True
-    return compressed_data, decompressed_data
+    # decompressed_data = lzw.decompress(compressed_data)
+    # print(decompressed_data == data)  # True
+    # return compressed_data, decompressed_data
+    return compressed_data
 
 
 def ppmd_encoding(data):
@@ -57,25 +58,33 @@ def deflate_encoding(data):
 
 data_type = [".txt", ".csv", ".js", ".txt"]
 filenames = ["bible", "finance", "jquery-3.6.0", "random"]
+compression_type = [".bzip2", ".lzma", ".lzw", ".huffman", ".ppmd", ".deflate"]
 for i in range(len(filenames)):
+    j = 0
     with open("..\dataset\\" + filenames[i] + data_type[i], "r") as file:
         data = file.read()
+        write_path = "..\compressed_dataset\\" + filenames[i]
         compressed_data_bzip, decompressed_data_bzip = bzip(data)
-        with open("..\compressed_dataset\\" + filenames[i] + ".bzip2", "wb") as write_file:
+        with open(write_path + compression_type[j], "wb") as write_file:
             write_file.write(compressed_data_bzip)
         compressed_data_lzma, decompressed_data_lzma = lzma_encoding(data)
-        with open("..\compressed_dataset\\" + filenames[i] + ".lzma", "wb") as write_file:
-            write_file.write(compressed_data_lzma)
-        compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
-        with open("..\compressed_dataset\\" + filenames[i] + ".lzw", "w") as write_file:
-            listToStr = ' '.join([str(elem) for elem in compressed_data_lzw])
-            write_file.write(listToStr)
+        j += 1
+        with open(write_path + compression_type[j], "wb") as write_file:
+             write_file.write(compressed_data_lzma)
+        # compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
+        #compressed_data_lzw = lzw_encoding(data)
+        #j += 1
+        #with open(write_path + compression_type[j], "wb") as write_file:
+        #    write_file.write(compressed_data_lzw.encode())
         compressed_data_huffman, decompressed_data_huffman = huffman_encoding(data)
-        with open("..\compressed_dataset\\" + filenames[i] + ".huffman", "w") as write_file:
+        j += 1
+        with open(write_path + compression_type[j], "w") as write_file:
             write_file.write(compressed_data_huffman)
         compressed_data_ppmd, decompressed_data_ppmd = ppmd_encoding(data)
-        with open("..\compressed_dataset\\" + filenames[i] + ".ppmd", "wb") as write_file:
+        j += 1
+        with open(write_path + compression_type[j], "wb") as write_file:
             write_file.write(compressed_data_ppmd)
         compressed_data_deflate, decompressed_data_deflate = deflate_encoding(data)
-        with open("..\compressed_dataset\\" + filenames[i] + ".deflate", "wb") as write_file:
+        j += 1
+        with open(write_path + compression_type[j], "wb") as write_file:
             write_file.write(compressed_data_deflate)
