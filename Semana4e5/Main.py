@@ -2,7 +2,7 @@
 
 import bz2
 import lzma
-import ppmd
+import pyppmd
 
 from HuffmanCodec import HuffmanCodec as huffman
 import LZW as lzw
@@ -41,8 +41,11 @@ def lzw_encoding(data):
     return compressed_data, decompressed_data
 
 
-def ppmd_encoding(data, name_data):
-    print("sfd")
+def ppmd_encoding(data):
+    compressed_data = pyppmd.compress(data.encode())
+    decompressed_data = pyppmd.decompress(compressed_data).decode()
+    print("ppmd", decompressed_data == data)  # True
+    return compressed_data, decompressed_data
 
 
 def deflate_encoding(data):
@@ -71,8 +74,9 @@ for i in range(len(filenames)):
         # compressed_data_hf, decompressed_data_hf = huffman_coding(data)
         # with open("..\compressed_dataset\\" + filenames[i] + ".hf", "wb") as write_file:
         #     write_file.write(compressed_data_hf)
-        compressed_data = PPM.PpmdCompressor.compress(file)
-        decompressed_file = PPM.PpmdDecompressor.decompress(filenames[i] + ".ppmd")
+        compressed_data_ppmd, decompressed_data_ppmd = ppmd_encoding(data)
+        with open("..\compressed_dataset\\" + filenames[i] + ".ppmd", "wb") as write_file:
+            write_file.write(compressed_data_ppmd)
         compressed_data_deflate, decompressed_data_deflate = deflate_encoding(data)
         with open("..\compressed_dataset\\" + filenames[i] + ".deflate", "wb") as write_file:
             write_file.write(compressed_data_deflate)
