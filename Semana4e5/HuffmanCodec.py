@@ -107,6 +107,25 @@ class PrefixCodec:
 
         return symbols, lengths
 
+    def print_code_table(self, out=sys.stdout):
+        """
+        Print code table overview
+        """
+        # TODO: add sort options?
+        # Render table cells as string
+        columns = list(zip(*itertools.chain(
+            [('Bits', 'Code', 'Value', 'Symbol')],
+            (
+                (str(bits), bin(val)[2:].rjust(bits, '0'), str(val), repr(symbol))
+                for symbol, (bits, val) in self._table.items()
+            )
+        )))
+        # Find column widths and build row template
+        widths = tuple(max(len(s) for s in col) for col in columns)
+        template = '{0:>%d} {1:%d} {2:>%d} {3}\n' % widths[:3]
+        for row in zip(*columns):
+            out.write(template.format(*row))
+
     def encode(self, data):
         """
         Encode given data.
@@ -283,3 +302,18 @@ class HuffmanCodec(PrefixCodec):
         """
         frequencies = collections.Counter(data)
         return cls.from_frequencies(frequencies, concat=_guess_concat(data))
+
+
+# -------------------- author: RPP, 2020.09.11
+def main():
+    # codec = HuffmanCodec.from_data('hello world how are you doing today foo bar lorem ipsum')
+    codec = HuffmanCodec.from_data([101, 102, 101, 102, 101, 102, 101, 100, 100, 104])
+    t = codec.get_code_table()
+    print(t)
+    s, l = codec.get_code_len()
+    print(s)
+    print(l)
+
+
+if __name__ == "__main__":
+    main()
