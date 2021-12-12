@@ -9,14 +9,10 @@ from Semana4e5 import Deflate
 
 
 def huffman_encoding(data):
-    encoded_text = HuffmanCodec.encode(data)
-    b_arr = bytearray()
-    for i in range(0, len(encoded_text), 8):
-        b_arr.append(int(encoded_text[i:i + 8], 2))
-    compressed_data = b_arr
-    decompressed_data = HuffmanCodec.decode(compressed_data)
+    encoded_text = HuffmanCodec.encode(data).encode()
+    decompressed_data = HuffmanCodec.decode(encoded_text)
     print(decompressed_data == data, "Huffman")  # True
-    return b_arr, decompressed_data
+    return encoded_text, decompressed_data
 
 
 def bzip(data):
@@ -62,7 +58,7 @@ def deflate_encoding(data):
 
 data_type = [".txt", ".csv", ".js", ".txt"]
 filenames = ["bible", "finance", "jquery-3.6.0", "random"]
-compression_type = [".bzip2", ".lzma", ".lzw", ".huffman", ".ppmd", ".deflate"]
+compression_type = [".bzip2", ".lzma", ".lzw", ".huffman", ".ppm", ".deflate"]
 for i in range(len(filenames)):
     j = 0
     with open("..\dataset\\" + filenames[i] + data_type[i], "r") as file:
@@ -77,12 +73,12 @@ for i in range(len(filenames)):
              write_file.write(compressed_data_lzma)
         # compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
         #compressed_data_lzw = lzw_encoding(data)
-        #j += 1
+        j += 1
         #with open(write_path + compression_type[j], "wb") as write_file:
         #    write_file.write(compressed_data_lzw.encode())
         compressed_data_huffman, decompressed_data_huffman = huffman_encoding(data)
         j += 1
-        with open(write_path + compression_type[j], "w") as write_file:
+        with open(write_path + compression_type[j], "wb") as write_file:
             write_file.write(compressed_data_huffman)
         compressed_data_ppmd, decompressed_data_ppmd = ppmd_encoding(data)
         j += 1
