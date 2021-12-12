@@ -1,319 +1,124 @@
-import collections
-import itertools
-import sys
-from heapq import heappush, heappop, heapify
-
-import logging
-import pickle
-from pathlib import Path
-from typing import Union, Any
-
-_log = logging.getLogger(__name__)
+from collections import Counter
+from queue import PriorityQueue
 
 
-class _EndOfFileSymbol:
-    """
-    Internal class for "end of file" symbol to be able
-    to detect the end of the encoded bit stream,
-    which does not necessarily align with byte boundaries.
-    """
+class HuffmanNode:
+    def __init__(self, char, freq=0, left=None, right=None):
+        self.char = char
+        self.freq = freq
+        self.left = left
+        self.right = right
 
-    def __repr__(self):
-        return '_EOF'
-
-    # Because _EOF will be compared with normal symbols (strings, bytes),
-    # we have to provide a minimal set of comparison methods.
-    # We'll make _EOF smaller than the rest (meaning lowest frequency)
     def __lt__(self, other):
-        return True
-
-    def __gt__(self, other):
-        return False
-
-    def __eq__(self, other):
-        return other.__class__ == self.__class__
-
-    def __hash__(self):
-        return hash(self.__class__)
+        return self.freq < other.freq
 
 
-# Singleton-like "end of file" symbol
-_EOF = _EndOfFileSymbol()
+def encode(text):
+    """Returns encoded string code with format [encoded_huffman_tree][extra_zeros_num][encoded_text]"""
+
+    frequencies = Counter(text)
+    queue = PriorityQueue()
+    code_table = {}
+
+    for char, f in frequencies.items():
+        queue.put(HuffmanNode(char, f))
+
+    # merge nodes
+    while queue.qsize() > 1:
+        l, r = queue.get(), queue.get()
+        queue.put(HuffmanNode(None, l.freq + r.freq, l, r))
+
+    huffman_tree = queue.get()
+
+    _fill_code_table(huffman_tree, "", code_table)
+
+    encoded_text_code = ""
+    for c in text:
+        encoded_text_code += code_table[c]
+
+    encoded_tree_code = _encode_huffman_tree(huffman_tree, "")
+
+    # add extra zeros, as in python it is not possible read
+    # file bit by bit (min byte) so extra zeros will be
+    # added automatically which cause a loss of information
+    num = 8 - (len(encoded_text_code) + len(encoded_tree_code)) % 8
+    if num != 0:
+        encoded_text_code = num * "0" + encoded_text_code
+
+    return f"{encoded_tree_code}{num:08b}{encoded_text_code}"
 
 
-# TODO store/load code table from file
-# TODO Directly encode to and decode from file
+def decode(encoded_text):
+    """Returns decoded string"""
 
-def _guess_concat(data):
-    """
-    Guess concat function from given data
-    """
-    return {
-        type(u''): u''.join,
-        type(b''): bytes,
-    }.get(type(data), list)
+    encoded_text_ar = list(encoded_text)
+    encoded_tree = _decode_huffman_tree(encoded_text_ar)
 
+    # remove extra zeros
+    number_of_extra_0_bin = encoded_text_ar[:8]
+    encoded_text_ar = encoded_text_ar[8:]
+    number_of_extra_0 = int("".join(number_of_extra_0_bin), 2)
+    encoded_text_ar = encoded_text_ar[number_of_extra_0:]
 
-def ensure_dir(path: Union[str, Path]) -> Path:
-    path = Path(path)
-    if not path.exists():
-        path.mkdir(parents=True)
-    assert path.is_dir()
-    return path
+    # decode text
+    text = ""
+    current_node = encoded_tree
+    for char in encoded_text_ar:
+        current_node = current_node.left if char == '0' else current_node.right
 
+        if current_node.char is not None:
+            text += current_node.char
+            current_node = encoded_tree
 
-class PrefixCodec:
-    """
-    Prefix code codec, using given code table.
-    """
-
-    def __init__(self, code_table, concat=list, check=True, eof=_EOF):
-        """
-        Initialize codec with given code table.
-
-        :param code_table: mapping of symbol to code tuple (bitsize, value)
-        :param concat: function to concatenate symbols
-        :param check: whether to check the code table
-        :param eof: "end of file" symbol (customizable for advanced usage)
-        """
-        # Code table is dictionary mapping symbol to (bitsize, value)
-        self._table = code_table
-        self._concat = concat
-        self._eof = eof
-        if check:
-            assert isinstance(self._table, dict) and all(
-                isinstance(b, int) and b >= 1 and isinstance(v, int) and v >= 0
-                for (b, v) in self._table.values()
-            )
-            # TODO check if code table is actually a prefix code
-
-    def get_code_table(self):
-        """
-        Get code table
-        :return: dictionary mapping symbol to code tuple (bitsize, value)
-        """
-        return self._table
-
-    def get_code_len(self):
-        """
-        Author: RPP, 2020.11.09
-        Get code len
-        :return: 2 lists: symbols and code length per symbol
-        """
-        t = self._table
-        symbols = sorted(t.keys())  # symbols
-        values = [t[s] for s in symbols]  # list(t.values())[1:]
-        lengths = [v[0] for v in values]  # symbol lengths
-
-        return symbols, lengths
-
-    def print_code_table(self, out=sys.stdout):
-        """
-        Print code table overview
-        """
-        # TODO: add sort options?
-        # Render table cells as string
-        columns = list(zip(*itertools.chain(
-            [('Bits', 'Code', 'Value', 'Symbol')],
-            (
-                (str(bits), bin(val)[2:].rjust(bits, '0'), str(val), repr(symbol))
-                for symbol, (bits, val) in self._table.items()
-            )
-        )))
-        # Find column widths and build row template
-        widths = tuple(max(len(s) for s in col) for col in columns)
-        template = '{0:>%d} {1:%d} {2:>%d} {3}\n' % widths[:3]
-        for row in zip(*columns):
-            out.write(template.format(*row))
-
-    def encode(self, data):
-        """
-        Encode given data.
-
-        :param data: sequence of symbols (e.g. byte string, unicode string, list, iterator)
-        :return: byte string
-        """
-        return bytes(self.encode_streaming(data))
-
-    def encode_streaming(self, data):
-        """
-        Encode given data in streaming fashion.
-
-        :param data: sequence of symbols (e.g. byte string, unicode string, list, iterator)
-        :return: generator of bytes (single character strings in Python2, ints in Python 3)
-        """
-        # Buffer value and size
-        buffer = 0
-        size = 0
-        for s in data:
-            # TODO: raise custom EncodeException instead of KeyError?
-            b, v = self._table[s]
-            # Shift new bits in the buffer
-            buffer = (buffer << b) + v
-            size += b
-            while size >= 8:
-                byte = buffer >> (size - 8)
-                yield byte
-                buffer = buffer - (byte << (size - 8))
-                size -= 8
-
-        # Handling of the final sub-byte chunk.
-        # The end of the encoded bit stream does not align necessarily with byte boundaries,
-        # so we need an "end of file" indicator symbol (_EOF) to guard against decoding
-        # the non-data trailing bits of the last byte.
-        # As an optimization however, while encoding _EOF, it is only necessary to encode up to
-        # the end of the current byte and cut off there.
-        # No new byte has to be started for the remainder, saving us one (or more) output bytes.
-        if size > 0:
-            b, v = self._table[self._eof]
-            buffer = (buffer << b) + v
-            size += b
-            if size >= 8:
-                byte = buffer >> (size - 8)
-            else:
-                byte = buffer << (8 - size)
-            yield byte
-
-    def decode(self, data, concat=None):
-        """
-        Decode given data.
-
-        :param data: sequence of bytes (string, list or generator of bytes)
-        :param concat: optional override of function to concatenate the decoded symbols
-        :return:
-        """
-        return (concat or self._concat)(self.decode_streaming(data))
-
-    def decode_streaming(self, data):
-        """
-        Decode given data in streaming fashion
-
-        :param data: sequence of bytes (string, list or generator of bytes)
-        :return: generator of symbols
-        """
-        # Reverse lookup table: map (bitsize, value) to symbols
-        lookup = {(b, v): s for s, (b, v) in self._table.items()}
-
-        buffer = 0
-        size = 0
-        for byte in data:
-            for m in [128, 64, 32, 16, 8, 4, 2, 1]:
-                buffer = (buffer << 1) + bool(byte & m)
-                size += 1
-                if (size, buffer) in lookup:
-                    symbol = lookup[size, buffer]
-                    if symbol == self._eof:
-                        return
-                    yield symbol
-                    buffer = 0
-                    size = 0
-
-    def save(self, path: Union[str, Path], metadata: Any = None):
-        """
-        Persist the code table to a file.
-        :param path: file path to persist to
-        :param metadata: additional metadata
-        :return:
-        """
-        code_table = self.get_code_table()
-        data = {
-            "code_table": code_table,
-            "type": type(self),
-            "concat": self._concat,
-        }
-        if metadata:
-            data['metadata'] = metadata
-        path = Path(path)
-        ensure_dir(path.parent)
-        with path.open(mode='wb') as f:
-            # TODO also provide JSON option? Requires handling of _EOF and possibly other non-string code table keys.
-            pickle.dump(data, file=f)
-        _log.info('Saved {c} code table ({l} items) to {p!r}'.format(
-            c=type(self).__name__, l=len(code_table), p=str(path)
-        ))
-
-    @staticmethod
-    def load(path: Union[str, Path]) -> 'PrefixCodec':
-        """
-        Load a persisted PrefixCodec
-        :param path: path to serialized PrefixCodec code table data.
-        :return:
-        """
-        path = Path(path)
-        with path.open(mode='rb') as f:
-            data = pickle.load(f)
-        cls = data['type']
-        assert issubclass(cls, PrefixCodec)
-        code_table = data['code_table']
-        _log.info('Loading {c} with {l} code table items from {p!r}'.format(
-            c=cls.__name__, l=len(code_table), p=str(path)
-        ))
-        return cls(code_table, concat=data['concat'])
+    return text
 
 
-class HuffmanCodec(PrefixCodec):
-    """
-    Huffman coder, with code table built from given symbol frequencies or raw data,
-    providing encoding and decoding methods.
-    """
-
-    @classmethod
-    def from_frequencies(cls, frequencies, concat=None, eof=_EOF):
-        """
-        Build Huffman code table from given symbol frequencies
-        :param frequencies: symbol to frequency mapping
-        :param concat: function to concatenate symbols
-        :param eof: "end of file" symbol (customizable for advanced usage)
-        """
-        concat = concat or _guess_concat(next(iter(frequencies)))
-
-        # Heap consists of tuples: (frequency, [list of tuples: (symbol, (bitsize, value))])
-        heap = [(f, [(s, (0, 0))]) for s, f in frequencies.items()]
-        # Add EOF symbol.
-        # if eof not in frequencies:
-        #    heap.append((1, [(eof, (0, 0))]))
-
-        # Use heapq approach to build the encodings of the huffman tree leaves.
-        heapify(heap)
-        while len(heap) > 1:
-            # Pop the 2 smallest items from heap
-            a = heappop(heap)
-            b = heappop(heap)
-            # Merge nodes (update codes for each symbol appropriately)
-            merged = (
-                a[0] + b[0],
-                [(s, (n + 1, v)) for (s, (n, v)) in a[1]]
-                + [(s, (n + 1, (1 << n) + v)) for (s, (n, v)) in b[1]]
-            )
-            heappush(heap, merged)
-
-        # Code table is dictionary mapping symbol to (bitsize, value)
-        table = dict(heappop(heap)[1])
-
-        return cls(table, concat=concat, check=False, eof=eof)
-
-    @classmethod
-    def from_data(cls, data):
-        """
-        Build Huffman code table from symbol sequence
-
-        :param data: sequence of symbols (e.g. byte string, unicode string, list, iterator)
-        :return: HuffmanCoder
-        """
-        frequencies = collections.Counter(data)
-        return cls.from_frequencies(frequencies, concat=_guess_concat(data))
+def compress(data):
+    encoded_text = encode(data)
+    b_arr = bytearray()
+    for i in range(0, len(encoded_text), 8):
+        b_arr.append(int(encoded_text[i:i + 8], 2))
+    return b_arr
 
 
-# -------------------- author: RPP, 2020.09.11
-def main():
-    # codec = HuffmanCodec.from_data('hello world how are you doing today foo bar lorem ipsum')
-    codec = HuffmanCodec.from_data([101, 102, 101, 102, 101, 102, 101, 100, 100, 104])
-    t = codec.get_code_table()
-    print(t)
-    s, l = codec.get_code_len()
-    print(s)
-    print(l)
+def _fill_code_table(node, code, code_table):
+    """Fill code table, which has chars and corresponded codes"""
+
+    if node.char is not None:
+        code_table[node.char] = code
+    else:
+        _fill_code_table(node.left, code + "0", code_table)
+        _fill_code_table(node.right, code + "1", code_table)
 
 
-if __name__ == "__main__":
-    main()
+def _encode_huffman_tree(node, tree_text):
+    """Encode huffman tree to save it in the file"""
+
+    if node.char is not None:
+        tree_text += "1"
+        tree_text += f"{ord(node.char):08b}"
+    else:
+        tree_text += "0"
+        tree_text = _encode_huffman_tree(node.left, tree_text)
+        tree_text = _encode_huffman_tree(node.right, tree_text)
+
+    return tree_text
+
+
+def _decode_huffman_tree(tree_code_ar):
+    """Decoding huffman tree to be able to decode the encoded text"""
+
+    # need to delete each use bit as we don't know the length of it and
+    # can't separate it from the text code
+    code_bit = tree_code_ar[0]
+    del tree_code_ar[0]
+
+    if code_bit == "1":
+        char = ""
+        for _ in range(8):
+            char += tree_code_ar[0]
+            del tree_code_ar[0]
+
+        return HuffmanNode(chr(int(char, 2)))
+
+    return HuffmanNode(None, left=_decode_huffman_tree(tree_code_ar), right=_decode_huffman_tree(tree_code_ar))
