@@ -9,7 +9,7 @@ from Semana4e5 import Deflate
 
 
 def huffman_encoding(data):
-    compressed_data = HuffmanCodec.compress(data)
+    compressed_data = HuffmanCodec.encode(data)
     decompressed_data = HuffmanCodec.decode(compressed_data)
     print(decompressed_data == data, "Huffman")  # True
     return compressed_data, decompressed_data
