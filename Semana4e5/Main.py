@@ -6,7 +6,7 @@ import os
 import pyppmd
 import HuffmanCodec
 
-import LZW as lzw
+import LZW
 from Semana4e5 import Deflate
 
 
@@ -39,11 +39,14 @@ def lzma_encoding(data):
 
 
 def lzw_encoding(data):
-    compressed_data = lzw.compress(data)
-    # decompressed_data = lzw.decompress(compressed_data)
-    # print(decompressed_data == data)  # True
-    # return compressed_data, decompressed_data
-    return compressed_data
+    compressed_data = LZW.compress(data)
+    decompressed_data = LZW.decompress(compressed_data)
+    print("lzw", decompressed_data == data)  # True
+    # print(compressed_data)
+    new = ""
+    for i in compressed_data:
+        new += str(i)
+    return new.encode(), decompressed_data
 
 
 def ppm_encoding(data):
@@ -75,6 +78,7 @@ compression_type = [".bzip2", ".lzma", ".lzw", ".huffman", ".ppm", ".deflate"]
 for i in range(len(filenames)):
     j = 0
     read_path = "..\dataset\\" + filenames[i] + data_type[i]
+    print(filenames[i] + data_type[i] + ":")
     with open(read_path, "r") as file:
         data = file.read()
         write_path = "..\compressed_dataset\\" + filenames[i]
@@ -87,11 +91,11 @@ for i in range(len(filenames)):
         with open(write_path + compression_type[j], "wb") as write_file:
              write_file.write(compressed_data_lzma)
         get_ratio(read_path, write_path + compression_type[j])
-        # compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
-        #compressed_data_lzw = lzw_encoding(data)
+        compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
         j += 1
-        #with open(write_path + compression_type[j], "wb") as write_file:
-        #    write_file.write(compressed_data_lzw.encode())
+        with open(write_path + compression_type[j], "wb") as write_file:
+            write_file.write(compressed_data_lzw)
+        get_ratio(read_path, write_path + compression_type[j])
         compressed_data_huffman, decompressed_data_huffman = huffman_encoding(data)
         j += 1
         with open(write_path + compression_type[j], "wb") as write_file:

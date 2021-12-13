@@ -1,10 +1,9 @@
-# https://tipsfordev.com/basic-lzw-compression-help-in-python
-
 def compress(uncompressed):
     """Compress a string to a list of output symbols."""
 
     # Build the dictionary.
     dict_size = 256
+    #dictionary = dict((chr(i), chr(i)) for i in xrange(dict_size))
     dictionary = {chr(i): chr(i) for i in range(dict_size)}
 
     w = ""
@@ -19,7 +18,6 @@ def compress(uncompressed):
             dictionary[wc] = dict_size
             dict_size += 1
             w = c
-
     # Output the code for w.
     if w:
         result.append(dictionary[w])
@@ -31,6 +29,7 @@ def decompress(compressed):
 
     # Build the dictionary.
     dict_size = 256
+    #dictionary = dict((chr(i), chr(i)) for i in xrange(dict_size))
     dictionary = {chr(i): chr(i) for i in range(dict_size)}
 
     w = result = compressed.pop(0)
