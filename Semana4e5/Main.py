@@ -21,7 +21,7 @@ def huffman_encoding(data):
     print("Compression Huffman: ", round(time.perf_counter() - start, 5), "seg")
     start = time.perf_counter()
     decompressed_data = HuffmanCodec.decode(encoded_text)
-    print("Deompression Huffman: ", round(time.perf_counter() - start, 5), "seg")
+    print("Decompression Huffman: ", round(time.perf_counter() - start, 5), "seg")
     print("Huffman:", decompressed_data == data)  # True
     return compressed_data, decompressed_data
 
