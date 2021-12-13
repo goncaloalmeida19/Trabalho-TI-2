@@ -55,7 +55,7 @@ def lzma_encoding(data):
 def lzw_encoding(data):
     compressed_data = LZW.compress(data)
     decompressed_data = LZW.decompress(compressed_data)
-    print("lzw", decompressed_data == data)  # True
+    print("LZW:", decompressed_data == data)  # True
     # print(compressed_data)
     new = ""
     for i in compressed_data:
