@@ -18,44 +18,48 @@ def huffman_encoding(data):
     compressed_data = bytearray()
     for i in range(0, len(encoded_text), 8):
         compressed_data.append(int(encoded_text[i:i + 8], 2))
-    print("Compression Huffman: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tCompression Huffman: ", round(time.perf_counter() - start, 5), "seg")
     start = time.perf_counter()
     decompressed_data = HuffmanCodec.decode(encoded_text)
-    print("Decompression Huffman: ", round(time.perf_counter() - start, 5), "seg")
-    print("Huffman:", decompressed_data == data)  # True
+    print("\tDecompression Huffman: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tHuffman:", decompressed_data == data)  # True
     return compressed_data, decompressed_data
 
 
 def bzip(data):
     start = time.perf_counter()
     compressed_data = bz2.compress(data.encode())
-    print("Compression Bzip2: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tCompression Bzip2: ", round(time.perf_counter() - start, 5), "seg")
     start = time.perf_counter()
     decompressed_data = bz2.decompress(compressed_data)
-    print("Decompression Bzip2: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tDecompression Bzip2: ", round(time.perf_counter() - start, 5), "seg")
     str_decompressed_data = decompressed_data.decode()
     # print(str_decompressed_data)
-    print("Bzip2:", str_decompressed_data == data)  # True
+    print("\tBzip2:", str_decompressed_data == data)  # True
     return compressed_data, decompressed_data
 
 
 def lzma_encoding(data):
     start = time.perf_counter()
     compressed_data = lzma.compress(str.encode(data))
-    print("Compression LZMA: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tCompression LZMA: ", round(time.perf_counter() - start, 5), "seg")
     start = time.perf_counter()
     decompressed_data = lzma.decompress(compressed_data)
-    print("Decompression LZMA: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tDecompression LZMA: ", round(time.perf_counter() - start, 5), "seg")
     str_decompressed_data = decompressed_data.decode()
     # print(str_decompressed_data)
-    print("LZMA:", str_decompressed_data == data)  # True
+    print("\tLZMA:", str_decompressed_data == data)  # True
     return compressed_data, decompressed_data
 
 
 def lzw_encoding(data):
+    start = time.perf_counter()
     compressed_data = LZW.compress(data)
+    print("\tCompression LZW: ", round(time.perf_counter() - start, 5), "seg")
+    start = time.perf_counter()
     decompressed_data = LZW.decompress(compressed_data)
-    print("LZW:", decompressed_data == data)  # True
+    print("\tDecompression LZW: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tLZW:", decompressed_data == data)  # True
     # print(compressed_data)
     new = ""
     for i in compressed_data:
@@ -66,31 +70,31 @@ def lzw_encoding(data):
 def ppm_encoding(data):
     start = time.perf_counter()
     compressed_data = pyppmd.compress(data.encode())
-    print("Compression PPM: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tCompression PPM: ", round(time.perf_counter() - start, 5), "seg")
     start = time.perf_counter()
     decompressed_data = pyppmd.decompress(compressed_data).decode()
-    print("Decompression PPM: ", round(time.perf_counter() - start, 5), "seg")
-    print("PPM:", decompressed_data == data)  # True
+    print("\tDecompression PPM: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tPPM:", decompressed_data == data)  # True
     return compressed_data, decompressed_data
 
 
 def deflate_encoding(data):
     start = time.perf_counter()
     compressed_data = Deflate.deflate(data.encode())
-    print("Compression Deflate: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tCompression Deflate: ", round(time.perf_counter() - start, 5), "seg")
     start = time.perf_counter()
     decompressed_data = Deflate.inflate(compressed_data)
-    print("Decompression Deflate: ", round(time.perf_counter() - start, 5), "seg")
+    print("\tDecompression Deflate: ", round(time.perf_counter() - start, 5), "seg")
     str_decompressed_data = decompressed_data.decode()
-    print("Deflate:", str_decompressed_data == data)  # True
+    print("\tDeflate:", str_decompressed_data == data)  # True
     return compressed_data, decompressed_data
 
 
-def get_ratio(original, compressed):
-    original_size = os.path.getsize(original)
+def get_ratio(original_size, compressed):
+
     compressed_size = os.path.getsize(compressed)
     compression_percent = round(100 - compressed_size / original_size * 100, 2)
-    print(f"Tamanho do original: {original_size} bytes / Tamanho do comprimido: {compressed_size} bytes / "
+    print(f"\tTamanho do comprimido: {compressed_size} bytes / "
           f"Ratio de compressão: {compression_percent}%")
 
 
@@ -100,7 +104,8 @@ compression_type = [".bzip2", ".lzma", ".lzw", ".huffman", ".ppm", ".deflate"]
 for i in range(len(filenames)):
     j = 0
     read_path = "..\dataset\\" + filenames[i] + data_type[i]
-    print(filenames[i] + data_type[i] + ":")
+    original_size = os.path.getsize(read_path)
+    print(filenames[i] + data_type[i] + " (Tamanho: " + str(original_size) + " bytes):")
     with open(read_path, "r") as file:
         data = file.read()
         for j in range(len(compression_type)):
@@ -124,4 +129,5 @@ for i in range(len(filenames)):
                 elif j == 5:
                     compressed_data_deflate, decompressed_data_deflate = deflate_encoding(data)
                     write_file.write(compressed_data_deflate)
-            get_ratio(read_path, write_path)
+            get_ratio(original_size, write_path)
+            print()
