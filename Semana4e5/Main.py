@@ -113,10 +113,8 @@ for i in range(len(filenames)):
                     compressed_data_lzma, decompressed_data_lzma = lzma_encoding(data)
                     write_file.write(compressed_data_lzma)
                 elif j == 2:
-                    pass
-                    # compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
-                    # with open(write_path, "wb") as write_file:
-                    #    write_file.write(compressed_data_lzw.encode())
+                    compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
+                    write_file.write(compressed_data_lzw)
                 elif j == 3:
                     compressed_data_huffman, decompressed_data_huffman = huffman_encoding(data)
                     write_file.write(compressed_data_huffman)
@@ -127,33 +125,3 @@ for i in range(len(filenames)):
                     compressed_data_deflate, decompressed_data_deflate = deflate_encoding(data)
                     write_file.write(compressed_data_deflate)
             get_ratio(read_path, write_path)
-        write_path = "..\compressed_dataset\\" + filenames[i]
-        compressed_data_bzip, decompressed_data_bzip = bzip(data)
-        with open(write_path + compression_type[j], "wb") as write_file:
-            write_file.write(compressed_data_bzip)
-        get_ratio(read_path, write_path + compression_type[j])
-        compressed_data_lzma, decompressed_data_lzma = lzma_encoding(data)
-        j += 1
-        with open(write_path + compression_type[j], "wb") as write_file:
-             write_file.write(compressed_data_lzma)
-        get_ratio(read_path, write_path + compression_type[j])
-        compressed_data_lzw, decompressed_data_lzw = lzw_encoding(data)
-        j += 1
-        with open(write_path + compression_type[j], "wb") as write_file:
-            write_file.write(compressed_data_lzw)
-        get_ratio(read_path, write_path + compression_type[j])
-        compressed_data_huffman, decompressed_data_huffman = huffman_encoding(data)
-        j += 1
-        with open(write_path + compression_type[j], "wb") as write_file:
-            write_file.write(compressed_data_huffman)
-        get_ratio(read_path, write_path + compression_type[j])
-        compressed_data_ppm, decompressed_data_ppm = ppm_encoding(data)
-        j += 1
-        with open(write_path + compression_type[j], "wb") as write_file:
-            write_file.write(compressed_data_ppm)
-        get_ratio(read_path, write_path + compression_type[j])
-        compressed_data_deflate, decompressed_data_deflate = deflate_encoding(data)
-        j += 1
-        with open(write_path + compression_type[j], "wb") as write_file:
-            write_file.write(compressed_data_deflate)
-        get_ratio(read_path, write_path + compression_type[j])
