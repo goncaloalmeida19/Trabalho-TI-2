@@ -1,3 +1,5 @@
+# https://tipsfordev.com/basic-lzw-compression-help-in-python
+
 def compress(uncompressed):
     """Compress a string to a list of output symbols."""
 
