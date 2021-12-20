@@ -1,5 +1,3 @@
-Primeiro trabalho prático realizado no âmbito da displicina de Tecnologia da Informação (LEI 2º ano)
-
 Introdução
   Período de execução: 5 Semanas
   Prazo de Entrega: Sexta-feira, 23 de dezembro 2020, 23h59
