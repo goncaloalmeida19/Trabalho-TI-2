@@ -1,3 +1,5 @@
+# https://github.com/shkolovy/huffman-compressor/blob/master/huffman_compressor.py
+
 from collections import Counter
 from queue import PriorityQueue
 
